@@ -1,4 +1,4 @@
-import dnd/message.{type Msg}
+import dnd/web.{type Msg}
 import gleam/dynamic.{type DecodeError, type Dynamic}
 import gleam/result
 import lustre/event.{on}

@@ -1,15 +1,13 @@
 import dnd/event.{on_drag_end, on_drag_over, on_drag_start, on_drop}
-import dnd/message.{
-  type Msg, OnDragEnd, OnDragNoTarget, OnDragOver, OnDragStart, OnDrop,
-}
 import dnd/web.{
-  type Card, type Column, type Pair, Card, Column, get_content, get_id,
+  type Card, type Column, type Msg, Card, Column, OnDragEnd, OnDragNoTarget,
+  OnDragOver, OnDragStart, OnDrop, move_card,
 }
 
-// move_card,
 import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
+
 import lustre
 import lustre/attribute.{attribute, class, id}
 import lustre/element.{text}
@@ -23,9 +21,9 @@ pub fn main() {
 type Model {
   Model(
     columns: List(Column),
-    curr_card: Option(Card),
-    drop_target: Option(Column),
-    curr_column_id: Option(Int),
+    target_card: Option(Card),
+    column_to: Option(Column),
+    column_from: Option(Column),
   )
 }
 
@@ -46,31 +44,21 @@ fn update(model: Model, msg: Msg) {
   // io.debug(model)
 
   case msg {
-    OnDragStart(card, curr_column_id) ->
+    OnDragStart(card, column_from) ->
+      Model(..model, target_card: Some(card), column_from: Some(column_from))
+    OnDragEnd ->
+      Model(..model, target_card: None, column_from: None, column_to: None)
+    OnDragOver(column) -> Model(..model, column_to: Some(column))
+    OnDragNoTarget -> Model(..model, column_to: None)
+    OnDrop -> {
+      let assert Some(card) = model.target_card
+      let assert Some(column_from) = model.column_from
+      let assert Some(column_to) = model.column_to
+
       Model(
         ..model,
-        curr_card: Some(card),
-        curr_column_id: Some(curr_column_id),
+        columns: move_card(model.columns, column_from, column_to, card),
       )
-    OnDragEnd ->
-      Model(..model, curr_card: None, curr_column_id: None, drop_target: None)
-    OnDragOver(column) -> Model(..model, drop_target: Some(column))
-    OnDragNoTarget -> Model(..model, drop_target: None)
-    OnDrop -> {
-      let assert Some(drop_target) = model.drop_target
-      let assert Some(curr_card) = model.curr_card
-      let assert Some(curr_column_id) = model.curr_column_id
-
-      model
-      // Model(
-      //   ..model,
-      //   columns: move_card(
-      //     model.columns,
-      //     curr_column_id,
-      //     drop_target |> get_id(),
-      //     curr_card,
-      //   ),
-      // )
     }
   }
 }
